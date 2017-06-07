@@ -7,30 +7,27 @@
 // adafruit library url = https://github.com/adafruit/HL1606-LED-Strip.git
 #include <HL1606strip.h>
 
-// use -any- 3 pins!
 #define STRIP_D 14 // data
 #define STRIP_C 13 // clock 
 #define STRIP_L 12 // latch
 
-// Pin S is not really used in this demo since it doesnt use the built in PWM fade
-// The last argument is the number of LEDs in the strip. Each chip has 2 LEDs, and the number
-// of chips/LEDs per meter varies so make sure to count them! if you have the wrong number
-// the strip will act a little strangely, with the end pixels not showing up the way you like
-HL1606strip strip = HL1606strip(STRIP_D, STRIP_L, STRIP_C, 20);
+#define NUM_LEDS 20
+
+HL1606strip strip = HL1606strip(STRIP_D, STRIP_L, STRIP_C, NUM_LEDS);
 
 // json streaming parser url = https://github.com/squix78/json-streaming-parser.git
 JsonStreamingParser parser;
 UptimeRobotListener listener;
 
 // how often to poll uptime robot
-#define POST_TIME_MS 10000
+#define FETCH_TIME_MS 10000
 
 // state machine states
-#define LOG_START 1
-#define LOG_WAIT 2
-#define LOG_POSTING 3
+#define ST_START 1
+#define ST_WAIT 2
+#define ST_FETCH 3
 
-int log_state = LOG_START;
+int log_state = ST_START;
 
 void setup()
 {
@@ -54,27 +51,27 @@ void loop()
     //log state machine
     switch(log_state)
     {
-        case LOG_START:
+        case ST_START:
         {
             // start wifi if necessary 
             if(WiFi.status() != WL_CONNECTED) 
                 start_wifi();
 
             start_time = millis();
-            log_state = LOG_WAIT;
+            log_state = ST_WAIT;
             break;
         }
-        case LOG_WAIT:
+        case ST_WAIT:
         {
-            if((millis() - start_time) > POST_TIME_MS)
-                log_state = LOG_POSTING;
+            if((millis() - start_time) > FETCH_TIME_MS)
+                log_state = ST_FETCH;
             break;
         }
-        case LOG_POSTING:
+        case ST_FETCH:
         {
-            Serial.println("posting");
+            Serial.println("fetch");
             fetch_status();
-            log_state = LOG_START;
+            log_state = ST_START;
             break;
         }
     }
@@ -161,6 +158,7 @@ void start_wifi()
     WiFi.begin(ssid, password);
 
     int count = 0;
+    // this will block till wifi is available
     while (WiFi.status() != WL_CONNECTED) 
     {
         delay(500);
