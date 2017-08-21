@@ -1,4 +1,5 @@
 #include <ESP8266WiFi.h>
+#include <WiFiClientSecure.h>
 #include "secrets.h"
 #include "JsonStreamingParser.h"
 #include "JsonListener.h"
@@ -58,20 +59,20 @@ void loop()
                 start_wifi();
 
             start_time = millis();
-            log_state = ST_WAIT;
-            break;
-        }
-        case ST_WAIT:
-        {
-            if((millis() - start_time) > FETCH_TIME_MS)
-                log_state = ST_FETCH;
+            log_state = ST_FETCH;
             break;
         }
         case ST_FETCH:
         {
             Serial.println("fetch");
             fetch_status();
-            log_state = ST_START;
+            log_state = ST_WAIT;
+            break;
+        }
+        case ST_WAIT:
+        {
+            if((millis() - start_time) > FETCH_TIME_MS)
+                log_state = ST_START;
             break;
         }
     }
@@ -79,10 +80,14 @@ void loop()
 
 void fetch_status()
 {
-    WiFiClient client;
-    const int httpPort = 80;
+//    WiFiClient client;
+    WiFiClientSecure client;
+    const int httpPort = 443;
 
-    Serial.print("connecting to :");
+    Serial.print("connecting to host:");
+    Serial.print(host);
+    Serial.print(":");
+    Serial.println(httpPort);
 
     if(!client.connect(host, httpPort)) 
     {
@@ -90,16 +95,16 @@ void fetch_status()
         return;
     }
 
+    Serial.println("connected");
+
     String url = "/v2/getMonitors";
-    Serial.print("with url : ");
-    Serial.println(url);
-
-    delay(100);
-
     String content = "api_key=";
     content += api_key;
     content += "&format=json";
-    Serial.print("data : ");
+
+    Serial.print("posting to url:");
+    Serial.println(url);
+    Serial.print("post data:");
     Serial.println(content);
 
     // This will send the request to the server
