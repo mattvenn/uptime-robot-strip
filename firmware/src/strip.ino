@@ -1,5 +1,6 @@
 #include <ESP8266WiFi.h>
 #include <WiFiClientSecure.h>
+// https example: https://github.com/esp8266/Arduino/blob/master/libraries/ESP8266WiFi/examples/HTTPSRequest/HTTPSRequest.ino
 #include "secrets.h"
 #include "JsonStreamingParser.h"
 #include "JsonListener.h"
